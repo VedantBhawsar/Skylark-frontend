@@ -3,12 +3,8 @@ import useWebSocket from 'react-use-websocket';
 import { useStreamStore } from '../store/streamStore';
 import type { StreamStatus } from '../types/stream';
 
-interface RTSPStreamOptions {
-  autoConnect?: boolean;
-}
 
-export const useRtspStream = (streamId: string | number, options: RTSPStreamOptions = {}) => {
-  const { autoConnect = true } = options;
+export const useRtspStream = (streamId: string | number) => {
   const [status, setStatus] = useState<StreamStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [wsUrl, setWsUrl] = useState<string | undefined>(undefined);

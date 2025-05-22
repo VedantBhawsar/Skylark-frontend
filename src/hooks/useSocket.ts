@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import socketService from '../services/socketService';
-import type { SocketEventType } from '../services/socketService';
 import { ReadyState } from 'react-use-websocket';
 import type { StreamStatus } from '../types/stream';
 

@@ -17,7 +17,7 @@ import {
   Play,
   MonitorPlay,
   Loader2,
-  X,
+
   Filter,
   ChevronDown,
   Sun,

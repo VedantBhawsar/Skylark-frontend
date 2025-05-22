@@ -1,4 +1,4 @@
-import type { Stream } from '../types/stream';
+
 
 /**
  * Safely converts a stream ID to string or number

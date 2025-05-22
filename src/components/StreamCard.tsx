@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PlayIcon, PauseIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/solid';
-import type { Stream } from '../types/stream';
-import { useStreamStore } from '../store/streamStore';
+  import type { Stream } from '../types/stream';
+import { deleteStream } from '../services/api';
 
 interface StreamCardProps {
   stream: Stream;
@@ -21,7 +21,6 @@ export const StreamCard = ({
   isPlaying = false,
   isLoading = false,
 }: StreamCardProps) => {
-  const { deleteStream } = useStreamStore();
   const [isHovered, setIsHovered] = useState(false);
   
   const handleDelete = async () => {

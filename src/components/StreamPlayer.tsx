@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSocket } from '../hooks/useSocket';
 import type { Stream } from '../types/stream';
 import { VideoPlayer } from './VideoPlayer';
-import toast from 'react-hot-toast';
 // Lucide React Icons
 import { 
   Play, 
@@ -11,8 +10,6 @@ import {
   Maximize, 
   Minimize, 
   X, 
-  Volume2, 
-  VolumeX,
   RotateCcw,
   Settings,
   Info
@@ -38,7 +35,6 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
   
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
   const [timeVisible, setTimeVisible] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [lastErrorTime, setLastErrorTime] = useState<number | null>(null);
@@ -105,15 +101,6 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
     if (error) {
       setLastErrorTime(Date.now());
       console.error('Stream error:', error);
-      toast.error('Stream connection error', {
-        duration: 4000,
-        position: 'bottom-right',
-        style: {
-          borderRadius: '10px',
-          background: '#333',
-          color: '#fff',
-        },
-      });
     }
   }, [error]);
   
@@ -150,21 +137,10 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
         console.log(`Reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay/1000} seconds`);
         
         reconnectTimer = setTimeout(() => {
-          toast.loading(`Reconnecting to stream (${reconnectAttempts}/${maxReconnectAttempts})...`, {
-            id: `reconnect-${stream.id}`,
-          });
           reconnect();
         }, delay);
       } else {
-        toast.error(`Failed to reconnect after ${maxReconnectAttempts} attempts`, {
-          duration: 5000,
-          position: 'bottom-right',
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        });
+        console.log(`Failed to reconnect after ${maxReconnectAttempts} attempts`);
       }
     };
     
@@ -173,16 +149,7 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
     } else if (streamStatus === 'playing') {
       // Reset reconnect attempts when successfully connected
       reconnectAttempts = 0;
-      toast.dismiss(`reconnect-${stream.id}`);
-      toast.success('Stream connected successfully', {
-        duration: 2000,
-        position: 'bottom-right',
-        style: {
-          borderRadius: '10px',
-          background: '#333',
-          color: '#fff',
-        },
-      });
+      console.log('Stream connected successfully');
     }
     
     return () => {
@@ -264,24 +231,12 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
   }, [stopStream]);
 
   const handlePlay = () => {
-    toast.loading('Starting stream...', {
-      id: `play-${stream.id}`,
-      duration: 2000,
-    });
+    console.log('Starting stream');
     startStream();
   };
 
   const handleStop = () => {
     stopStream();
-    toast.success('Stream stopped', {
-      duration: 2000,
-      position: 'bottom-right',
-      style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
-      },
-    });
   };
   
   const toggleFullscreen = () => {
@@ -290,10 +245,6 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
       if (playerRef.current?.requestFullscreen) {
         playerRef.current.requestFullscreen().catch(err => {
           console.error(`Error attempting to enable fullscreen: ${err.message}`);
-          toast.error('Failed to enter fullscreen mode', {
-            duration: 3000,
-            position: 'bottom-center',
-          });
         });
       }
     } else {
@@ -301,19 +252,12 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
       if (document.exitFullscreen) {
         document.exitFullscreen().catch(err => {
           console.error(`Error attempting to exit fullscreen: ${err.message}`);
-          toast.error('Failed to exit fullscreen mode', {
-            duration: 3000,
-            position: 'bottom-center',
-          });
         });
       }
     }
   };
   
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-  
+
   const toggleSettings = () => {
     setShowSettings(!showSettings);
     // If we're showing settings, ensure controls stay visible
@@ -575,10 +519,6 @@ export function StreamPlayer({ stream, onPlayStatusChange }: StreamPlayerProps) 
                   <button
                     onClick={() => {
                       toggleSettings();
-                      toast.loading('Restarting stream...', {
-                        id: `restart-${stream.id}`,
-                        duration: 3000,
-                      });
                       reconnect();
                     }}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium text-sm transition-colors"
