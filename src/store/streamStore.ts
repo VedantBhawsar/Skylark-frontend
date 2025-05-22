@@ -1,105 +1,119 @@
 import { create } from 'zustand';
-import type { Stream, StreamState } from '../types/stream';
-import * as api from '../services/api';
+import type { Stream } from '../types/stream';
+import { fetchStreams, fetchDefaultStreams, createStream, updateStream, deleteStream } from '../services/api';
 
-interface StreamStore {
+interface StreamState {
   streams: Stream[];
-  activeStream: Stream | null;
-  streamStates: Record<string, StreamState>;
-  loading: boolean;
+  isLoading: boolean;
   error: string | null;
-  
-  // Actions
+  selectedStreamId: string | number | null;
   fetchStreams: () => Promise<void>;
   fetchDefaultStreams: () => Promise<void>;
-  setActiveStream: (stream: Stream | null) => void;
-  createStream: (stream: Omit<Stream, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addStream: (stream: Omit<Stream, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateStream: (id: string | number, stream: Partial<Stream>) => Promise<void>;
-  deleteStream: (id: string | number) => Promise<void>;
-  setStreamState: (streamId: string | number, state: Partial<StreamState>) => void;
+  removeStream: (id: string | number) => Promise<void>;
+  selectStream: (id: string | number | null) => void;
+  getSelectedStream: () => Stream | undefined;
+  setStreamState: (id: string | number, state: { status?: string; error?: string; wsUrl?: string; rtspUrl?: string }) => void;
 }
 
-export const useStreamStore = create<StreamStore>((set, get) => ({
+export const useStreamStore = create<StreamState>((set, get) => ({
   streams: [],
-  activeStream: null,
-  streamStates: {},
-  loading: false,
+  isLoading: false,
   error: null,
-  
+  selectedStreamId: null,
+
   fetchStreams: async () => {
-    set({ loading: true, error: null });
+    set({ isLoading: true, error: null });
     try {
-      const streams = await api.fetchStreams();
-      set({ streams, loading: false });
+      const streams = await fetchStreams();
+      set({ streams, isLoading: false });
     } catch (error) {
-      set({ error: 'Failed to fetch streams', loading: false });
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch streams', 
+        isLoading: false 
+      });
     }
   },
-  
+
   fetchDefaultStreams: async () => {
-    set({ loading: true, error: null });
+    set({ isLoading: true, error: null });
     try {
-      const streams = await api.fetchDefaultStreams();
-      set({ streams, loading: false });
+      const streams = await fetchDefaultStreams();
+      set({ streams, isLoading: false });
     } catch (error) {
-      set({ error: 'Failed to fetch default streams', loading: false });
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch default streams', 
+        isLoading: false 
+      });
     }
   },
-  
-  setActiveStream: (stream) => {
-    set({ activeStream: stream });
-  },
-  
-  createStream: async (stream) => {
-    set({ loading: true, error: null });
+
+  addStream: async (streamData) => {
+    set({ isLoading: true, error: null });
     try {
-      const newStream = await api.createStream(stream);
-      set((state) => ({ 
+      const newStream = await createStream(streamData);
+      set(state => ({ 
         streams: [...state.streams, newStream],
-        loading: false,
+        isLoading: false 
       }));
     } catch (error) {
-      set({ error: 'Failed to create stream', loading: false });
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to add stream', 
+        isLoading: false 
+      });
     }
   },
-  
-  updateStream: async (id, stream) => {
-    set({ loading: true, error: null });
+
+  updateStream: async (id, streamData) => {
+    set({ isLoading: true, error: null });
     try {
-      const updatedStream = await api.updateStream(id, stream);
-      set((state) => ({
-        streams: state.streams.map((s) => (s.id === id ? updatedStream : s)),
-        activeStream: state.activeStream?.id === id ? updatedStream : state.activeStream,
-        loading: false,
+      const updatedStream = await updateStream(id, streamData);
+      set(state => ({ 
+        streams: state.streams.map(stream => 
+          stream.id === id ? { ...stream, ...updatedStream } : stream
+        ),
+        isLoading: false 
       }));
     } catch (error) {
-      set({ error: 'Failed to update stream', loading: false });
+      set({ 
+        error: error instanceof Error ? error.message : `Failed to update stream ${id}`, 
+        isLoading: false 
+      });
     }
   },
-  
-  deleteStream: async (id) => {
-    set({ loading: true, error: null });
+
+  removeStream: async (id) => {
+    set({ isLoading: true, error: null });
     try {
-      await api.deleteStream(id);
-      set((state) => ({
-        streams: state.streams.filter((s) => s.id !== id),
-        activeStream: state.activeStream?.id === id ? null : state.activeStream,
-        loading: false,
+      await deleteStream(id);
+      set(state => ({ 
+        streams: state.streams.filter(stream => stream.id !== id),
+        selectedStreamId: state.selectedStreamId === id ? null : state.selectedStreamId,
+        isLoading: false 
       }));
     } catch (error) {
-      set({ error: 'Failed to delete stream', loading: false });
+      set({ 
+        error: error instanceof Error ? error.message : `Failed to delete stream ${id}`, 
+        isLoading: false 
+      });
     }
   },
+
+  selectStream: (id) => {
+    set({ selectedStreamId: id });
+  },
+
+  getSelectedStream: () => {
+    const { streams, selectedStreamId } = get();
+    return streams.find(stream => stream.id === selectedStreamId);
+  },
   
-  setStreamState: (streamId, state) => {
-    set((currentState) => ({
-      streamStates: {
-        ...currentState.streamStates,
-        [streamId]: {
-          ...currentState.streamStates[streamId] || { status: 'idle' },
-          ...state,
-        },
-      },
+  setStreamState: (id, state) => {
+    set(store => ({
+      streams: store.streams.map(stream => 
+        stream.id === id ? { ...stream, ...state } : stream
+      )
     }));
-  },
+  }
 })); 

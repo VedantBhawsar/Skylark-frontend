@@ -6,6 +6,7 @@ export interface Stream {
   active: boolean;
   created_at?: string;
   updated_at?: string;
+  isLocal?: boolean;
 }
 
 export interface StreamResponse {

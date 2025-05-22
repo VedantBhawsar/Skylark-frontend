@@ -44,7 +44,7 @@ export const useRtspStream = (streamId: string | number, options: RTSPStreamOpti
       
       sendMessage(JSON.stringify({
         action: 'start_stream',
-        stream_url: rtspUrl,
+        rtsp_url: rtspUrl,
       }));
     } else {
       setError('WebSocket is not connected');
@@ -70,7 +70,7 @@ export const useRtspStream = (streamId: string | number, options: RTSPStreamOpti
         const data = JSON.parse(lastMessage.data);
         
         switch (data.type) {
-          case 'stream_started':
+          case 'stream.started':
             setWsUrl(data.stream_url);
             setStatus('playing');
             setStreamState(streamId, {
@@ -80,15 +80,23 @@ export const useRtspStream = (streamId: string | number, options: RTSPStreamOpti
             });
             break;
             
-          case 'stream_stopped':
+          case 'stream.stopped':
             setStatus('stopped');
             setStreamState(streamId, { status: 'stopped' });
             break;
             
-          case 'error':
+          case 'stream.error':
             setError(data.message);
             setStatus('error');
             setStreamState(streamId, { status: 'error', error: data.message });
+            break;
+            
+          case 'stream.frame':
+            setStatus('playing');
+            setStreamState(streamId, { 
+              status: 'playing',
+              rtspUrl: streamUrlRef.current || undefined
+            });
             break;
             
           default:
